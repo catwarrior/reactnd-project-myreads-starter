@@ -2,17 +2,22 @@ import React from 'react'
 import * as BooksAPI from './BooksAPI'
 import './App.css'
 import SearchBooks from './SearchBooks'
-import BookList from './BookList'
-import { Route } from 'react-router-dom'
+import Main from './Main'
+import { BrowserRouter, Route } from 'react-router-dom'
 
 class BooksApp extends React.Component {
-  state = {
-    books: [],
-    shelfs: [ 
-      { name: "currentlyReading" ,title: "currently Reading"},
-      { name: "read" ,title: "Read"},
-      { name: "wantToRead" ,title: "WantToRead"},
-    ]
+  constructor(props) {
+    super(props);
+    this.state = {
+      books: [],
+      shelfs: [ 
+        { name: "currentlyReading" ,title: "Currently Reading"},
+        { name: "read" ,title: "Read"},
+        { name: "wantToRead" ,title: "WantToRead"},
+      ]
+    }
+
+    this.changeBookShelf = this.changeBookShelf.bind(this);
   }
 
   componentDidMount() {
@@ -21,23 +26,31 @@ class BooksApp extends React.Component {
     })
   }
 
-  changeBookShelf(theBook, shelf) {
-    this.setState((state) => {
-      state.books.filter(b=>b.title === theBook.title)[0].shelf = shelf;
-      return {books: state.books};
+  changeBookShelf(book, shelf) {
+    BooksAPI.update(book, shelf)
+    .then(result => {
+      book.shelf = shelf
+      this.setState((state) => ({
+        books: state.books.filter(b=>b.id !== book.id).concat([book])
+      }))
     })
   }
 
   render() {
     return (
-      <div className="app">
-        <Route path="/search" render={()=>(
-          <SearchBooks />
-        )} />
-        <Route exact path="/" render={()=>(
-          <BookList books={this.state.books} shelfs={this.state.shelfs} changeBookShelf={this.changeBookShelf.bind(this)}/>
-        )} />
+      <div>
+      <BrowserRouter>
+          <Route exact path="/" render={()=>(
+            <Main books={this.state.books} onChangeShelf={this.changeBookShelf}/>
+          )} />
+        <div className="app">
+          <Route path="/search" render={()=>(
+            <SearchBooks books={this.state.books} onChangeShelf={this.changeBookShelf}/>
+          )} />
+        </div>
+      </BrowserRouter>
       </div>
+      
     )
   }
 }
